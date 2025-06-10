@@ -24,13 +24,10 @@ Include any `.env` info if needed.
 
 Pick one or say "custom":  
 
-- Overkill Calculator
-- Is This Chicken?
-- Startup in a Box
 - Custom
 
 ---
 
 ## 🎉 Anything Else?
 
-Did something weird, funny, or unexpected happen?
+
