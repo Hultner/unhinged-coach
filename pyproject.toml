@@ -1,0 +1,19 @@
+[project]
+name = "unhinged-coach"
+version = "0.1.0"
+description = "Unhinged motivational coach API with image generation"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.28.1",
+    "openai>=1.0.0",
+    "python-dotenv>=1.0.0",
+    "mcp[cli]>=1.9.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
