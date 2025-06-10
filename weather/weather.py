@@ -1,6 +1,12 @@
 from typing import Any
 import httpx
 from mcp.server.fastmcp import FastMCP
+import openai
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(dotenv_path="../.env")
 
 # Initialize FastMCP server
 mcp = FastMCP("weather")
@@ -8,6 +14,9 @@ mcp = FastMCP("weather")
 # Constants
 NWS_API_BASE = "https://api.weather.gov"
 USER_AGENT = "weather-app/1.0"
+
+# Initialize OpenAI client
+openai_client = openai.AsyncOpenAI(api_key=os.getenv("OPEN_API_KEY"))
 
 async def make_nws_request(url: str) -> dict[str, Any] | None:
     """Make a request to the NWS API with proper error handling."""
@@ -89,6 +98,33 @@ Forecast: {period['detailedForecast']}
 
     return "\n---\n".join(forecasts)
 
+@mcp.tool()
+async def unhinged_coach(message: str) -> str:
+    """Get unhinged coaching advice from an AI coach.
+
+    Args:
+        message: The message or question to ask the unhinged coach
+    """
+    try:
+        response = await openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are an unhinged, over-the-top motivational coach. Be extremely enthusiastic, use ALL CAPS frequently, and give advice that's motivational but completely over the top and dramatic. Be encouraging but in the most intense way possible. Make your responses entertaining and fun while still being helpful."
+                },
+                {"role": "user", "content": message}
+            ],
+            max_tokens=500,
+            temperature=0.9
+        )
+        
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"ERROR: The coach is having a breakdown! {str(e)}"
+
 if __name__ == "__main__":
+    # Initialize and run the server
+    mcp.run(transport='stdio')
     # Initialize and run the server
     mcp.run(transport='stdio')
