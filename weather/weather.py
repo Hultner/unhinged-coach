@@ -100,31 +100,66 @@ Forecast: {period['detailedForecast']}
 
 @mcp.tool()
 async def unhinged_coach(message: str) -> str:
-    """Get unhinged coaching advice from an AI coach.
+    """Get unhinged coaching advice from an AI coach with a motivational image.
 
     Args:
         message: The message or question to ask the unhinged coach
     """
     try:
-        response = await openai_client.chat.completions.create(
+        # Generate both coaching text and image prompt in parallel for speed
+        import asyncio
+        
+        # Task 1: Generate the coaching text
+        coaching_task = openai_client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {
                     "role": "system", 
-                    "content": "You are an unhinged, you are chaotic and over-the-top motivational coach. Be extremely enthusiastic, use CAPS frequently but not all the time, sprinkle those emojis, and give advice that's motivational but completely over the top and dramatic. Be encouraging but in the most intense way possible. Make your responses entertaining and fun while still being helpful. Keep it short, maximum 500 characters. Use emojis to enhance the message! 🎉🔥💪"
+                    "content": "You are an unhinged, chaotic and over-the-top motivational coach. Be extremely enthusiastic, use CAPS frequently but not all the time, sprinkle those emojis, and give advice that's motivational but completely over the top and dramatic. Be encouraging but in the most intense way possible. Make your responses entertaining and fun while still being helpful. Keep it short, maximum 300 characters. Use emojis to enhance the message! 🎉🔥💪"
                 },
                 {"role": "user", "content": message}
             ],
-            max_tokens=500,
+            max_tokens=300,
             temperature=0.9
         )
         
-        return response.choices[0].message.content
+        # Task 2: Generate a creative image prompt
+        image_prompt_task = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[
+                {
+                    "role": "system", 
+                    "content": "You are a chaotic meme creator! Create WILD and RIDICULOUS image prompts for motivational memes. Be creative, absurd, and over-the-top! Include random elements like: animals doing workouts, food metaphors, superhero themes, weird scenarios, pop culture references, dramatic weather, or anything UNHINGED! Keep it under 100 words but make it EPIC! 🎨🔥"
+                },
+                {"role": "user", "content": f"Create a meme image prompt for someone who says: '{message}'"}
+            ],
+            max_tokens=150,
+            temperature=1.0
+        )
+        
+        # Wait for both tasks to complete
+        chat_response, prompt_response = await asyncio.gather(coaching_task, image_prompt_task)
+        
+        coaching_text = chat_response.choices[0].message.content
+        creative_image_prompt = prompt_response.choices[0].message.content
+        
+        # Generate the image with the creative prompt (smaller size for speed)
+        image_response = await openai_client.images.generate(
+            model="dall-e-3",
+            prompt=creative_image_prompt,
+            size="1024x1024",  # Smaller for faster generation
+            quality="standard",
+            n=1
+        )
+        
+        image_url = image_response.data[0].url
+        
+        # Combine text and image
+        return f"{coaching_text}\n\n ![]({image_url})"
+        
     except Exception as e:
         return f"ERROR: The coach is having a breakdown! {str(e)}"
 
 if __name__ == "__main__":
-    # Initialize and run the server
-    mcp.run(transport='stdio')
     # Initialize and run the server
     mcp.run(transport='stdio')
